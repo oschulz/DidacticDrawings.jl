@@ -7,17 +7,26 @@ Template for Julia packages.
 """
 module DidacticDrawings
 
+import StaticArrays
+import GeometryBasics
+import Observables
 import MakieCore
 import Makie
-import GeometryBasics
+
+using GeometryBasics: Point, Point2f, Point3f, Vec, Vec2f, Vec3f
+
+using ColorTypes: RGBA, RGB, HSV
+
+using MakieCore: AbstractPlot
 
 using Makie: Figure, Axis, LScene, Camera3D
 using Makie: current_figure, current_axis
+using Makie: Quaternion
 
-export current_figure
-export current_axis
+using Accessors: @set
 
 include("init.jl")
-include("shapes.jl")
+include("graphical_object.jl")
+include("geometry_2d.jl")
 
 end # module
