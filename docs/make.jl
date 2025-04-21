@@ -1,0 +1,39 @@
+# Use
+#
+#     DOCUMENTER_DEBUG=true julia --color=yes make.jl local [nonstrict] [fixdoctests]
+#
+# for local builds.
+
+using Documenter
+using DidacticDrawings
+
+# Doctest setup
+DocMeta.setdocmeta!(
+    DidacticDrawings,
+    :DocTestSetup,
+    :(using DidacticDrawings);
+    recursive=true,
+)
+
+makedocs(
+    sitename = "DidacticDrawings",
+    modules = [DidacticDrawings],
+    format = Documenter.HTML(
+        prettyurls = !("local" in ARGS),
+        canonical = "https://oschulz.github.io/DidacticDrawings.jl/stable/"
+    ),
+    pages = [
+        "Home" => "index.md",
+        "API" => "api.md",
+        "LICENSE" => "LICENSE.md",
+    ],
+    doctest = ("fixdoctests" in ARGS) ? :fix : true,
+    linkcheck = !("nonstrict" in ARGS),
+    warnonly = ("nonstrict" in ARGS),
+)
+
+deploydocs(
+    repo = "github.com/oschulz/DidacticDrawings.jl.git",
+    forcepush = true,
+    push_preview = true,
+)
