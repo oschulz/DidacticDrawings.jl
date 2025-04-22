@@ -23,7 +23,7 @@ using Makie: Figure, Axis, LScene, Camera3D
 using Makie: current_figure, current_axis
 using Makie: Quaternion
 
-using Accessors: @set
+using Accessors: set, PropertyLens, IndexLens
 
 include("init.jl")
 include("graphical_object.jl")
