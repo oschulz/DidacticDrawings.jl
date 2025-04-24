@@ -2,11 +2,7 @@
 
 # GeometryBasics:
 export Point
-export Point2f
-export Point3f
 export Vec
-export Vec2f
-export Vec3f
 
 # ColorTypes:
 export RGBA
