@@ -85,11 +85,11 @@ end
 
 
 """
-    DidacticDrawings.init2d()
+    DidacticDrawings.init_display_2d()
 
 Initialize the 2D drawing environment.
 """
-function init2d()
+function init_display_2d()
     _init_makie()
 
     fig = Figure()
@@ -101,11 +101,11 @@ end
 
 
 """
-    DidacticDrawings.init3d()
+    DidacticDrawings.init_display_3d()
 
 Initialize the 3D drawing environment.
 """
-function init3d()
+function init_display_3d()
     _init_makie()
 
     fig = Figure()

@@ -26,8 +26,12 @@ using Makie: Quaternion
 
 using Accessors: PropertyLens, IndexLens
 
-include("init.jl")
+include("getsetval.jl")
+include("changeable.jl")
+include("math_sets.jl")
+include("init_display.jl")
 include("graphical_object.jl")
 include("geometry_2d.jl")
+include("reexports.jl")
 
 end # module

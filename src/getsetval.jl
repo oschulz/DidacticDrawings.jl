@@ -81,20 +81,33 @@ export setval!
 @inline _set_generic!(lens::IndexLens, value, x) = setindex!(value, x, lens.indices...)
 
 
+@inline _reflike_getval(lens, obj) = getval(lens, obj[])
 
-@inline getval(lens, obj::Observable) = getval(lens, obj[])
-
-@inline function setval!!(lens, obj::Observable, x)
+@inline function _reflike_setval!!(lens, obj, x)
     setval!(lens, obj, x)
     return obj
 end
 
-function setval!(lens, obj::Observable, x)
+function _reflike_setval!(lens, obj, x)
     new_value = setval!!(lens, getval(obj), x)
     obj[] = new_value
     return x
 end
 
+
+@inline getval(lens, obj::Ref) = _reflike_getval(lens, obj)
+@inline setval!!(lens, obj::Ref, x) = _reflike_setval!!(lens, obj, x)
+@inline setval!(lens, obj::Ref, x) = _reflike_setval!(lens, obj, x)
+
+
+# = Observables ==============================================================
+
+@inline getval(lens, obj::Observable) = _reflike_getval(lens, obj)
+@inline setval!!(lens, obj::Observable, x) = _reflike_setval!!(lens, obj, x)
+@inline setval!(lens, obj::Observable, x) = _reflike_setval!(lens, obj, x)
+
+
+# = Symbolics ===============================================================
 
 const _SymObject = Union{Symbolics.Num, Symbolics.Arr}
 

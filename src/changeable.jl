@@ -54,21 +54,22 @@ function Base.show(io::IO, ::MIME"text/plain", obj::LensedAsArray)
 end
 
 
+const _LensedLike = Union{LensedAsObj, LensedAsArray}
 
-@inline _getlens(obj::Union{LensedAsObj, LensedAsArray}) = getfield(obj, :_lens)
-@inline _getorig(obj::Union{LensedAsObj, LensedAsArray}) = getfield(obj, :_orig)
+@inline _getlens(obj::_LensedLike) = getfield(obj, :_lens)
+@inline _getorig(obj::_LensedLike) = getfield(obj, :_orig)
 
-getval(::typeof(identity), obj::Union{LensedAsObj, LensedAsArray}) = getval(_getlens(obj), _getorig(obj))
-getval(lens, obj::Union{LensedAsObj, LensedAsArray}) = getval(lens, getval(obj))
+getval(::typeof(identity), obj::_LensedLike) = getval(_getlens(obj), _getorig(obj))
+getval(lens, obj::_LensedLike) = getval(lens, getval(obj))
 
-@inline function setval!!(lens, obj::Union{LensedAsObj, LensedAsArray}, x)
+@inline function setval!!(lens, obj::_LensedLike, x)
     setval!(obj, lens, x)
     return obj
 end
 
-setval!(::typof(identity), obj::Union{LensedAsObj, LensedAsArray}, x) = setval!(_getlens(obj), _getorig(obj), x)
+setval!(::typof(identity), obj::_LensedLike, x) = setval!(_getlens(obj), _getorig(obj), x)
 
-function setval!(lens, obj::Union{LensedAsObj, LensedAsArray}, x)
+function setval!(lens, obj::_LensedLike, x)
     new_value = setval!!(lens, getval(obj), x)
     setval!(obj, new_value)
     return x
