@@ -67,7 +67,7 @@ getval(lens, obj::_LensedLike) = getval(lens, getval(obj))
     return obj
 end
 
-setval!(::typof(identity), obj::_LensedLike, x) = setval!(_getlens(obj), _getorig(obj), x)
+setval!(::typeof(identity), obj::_LensedLike, x) = setval!(_getlens(obj), _getorig(obj), x)
 
 function setval!(lens, obj::_LensedLike, x)
     new_value = setval!!(lens, getval(obj), x)
