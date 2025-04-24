@@ -8,6 +8,7 @@ Template for Julia packages.
 module DidacticDrawings
 
 import StaticArrays
+import Accessors
 import Symbolics
 import GeometryBasics
 import Observables

@@ -3,7 +3,7 @@
 
 """
     getval(lens, obj)
-    getval(obj) == getval(identity, obj)
+    getval(obj) = getval(identity, obj)
 
 Get the value of `obj` under the given `lens` function (n the sense
 of Accessors.jl lenses).
@@ -18,9 +18,8 @@ Do not specialize `getval(obj::SomeType)`, specialize
 function getval end
 export getval
 
-@inline getval(value) = getval(identity, value)
-@inline getval(::typeof(identity), value) = value
-@inline getval(lens, value) = lens(getval(value))
+@inline getval(obj) = getval(identity, obj)
+@inline getval(lens, obj) = lens(obj)
 
 
 
@@ -41,12 +40,12 @@ Do not specialize `setval!!(obj::SomeType, x)`, specialize
 function setval!! end
 export setval!!
 
-@inline function setval!!(lens, value, x)
-    if ismutable(value)
-        setval!(lens, value, x)
-        return value
+@inline function setval!!(lens, obj, x)
+    if ismutable(obj)
+        setval!(lens, obj, x)
+        return obj
     else
-        new_value = Acessors.set(lens, value, x)
+        new_value = Accessors.set(obj, lens, x)
         return new_value
     end
 end

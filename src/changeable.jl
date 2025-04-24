@@ -34,10 +34,13 @@ end
 
 LensedAsArray{T,N}(lens::LT, orig::PT) where {T,N,LT,PT} = LensedAsArray{T,N,LT,PT}(lens, orig)
 
-@inline Base.getindex(obj::LensedAsArray, idx) = getval(obj, IndexLens(idx,))
-@inline Base.getindex(obj::LensedAsArray, idx...) = getval(obj, IndexLens(idxs))
-@inline Base.setindex!(obj::LensedAsArray, x, idx) = setval!(obj, IndexLens(idx,), x)
-@inline Base.setindex!(obj::LensedAsArray, x, idxs...) = setval!(obj, IndexLens(idxs), x)
+@inline Base.getindex(obj::LensedAsArray, idx::Integer) = getval(obj, IndexLens((idx,)))
+@inline Base.getindex(obj::LensedAsArray, idx::AbstractArray{<:Integer}) = getval(obj, IndexLens((idx,)))
+@inline Base.getindex(obj::LensedAsArray, idxs::Tuple{Vararg{Any,N}}) where N = getval(obj, IndexLens(idxs))
+
+@inline Base.setindex!(obj::LensedAsArray, x, idx::Integer) = setval!(obj, IndexLens((idx,)), x)
+@inline Base.setindex!(obj::LensedAsArray, x, idx::AbstractArray{<:Integer}) = setval!(obj, IndexLens((idx,)), x)
+@inline Base.setindex!(obj::LensedAsArray, x, idxs::Tuple{Vararg{Any,N}}) where N = setval!(obj, IndexLens(idxs), x)
 
 @inline Base.size(obj::LensedAsArray) = size(getval(obj, identity))
 @inline Base.length(obj::LensedAsArray) = length(getval(obj, identity))
