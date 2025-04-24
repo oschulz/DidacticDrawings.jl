@@ -73,7 +73,7 @@ getval(lens, obj::_LensedLike) = getval(lens, getval(obj))
     orig_lens = _getlens(obj)
     old_orig = _getorig(obj)
     new_orig = setval!!(_getlens(obj), _getorig(obj), x)
-    if typeof(old_orig) == typeof(new_orig) && old_orig === new_orig
+    if old_orig === new_orig
         return obj
     else
         return _similar_lensed(obj, orig_lens, new_orig)
