@@ -8,12 +8,12 @@ struct LensedAsObj{LT,PT}
 end
 
 
-@inline Base.getindex(obj::LensedAsObj) = _get(obj, identity)
-@inline Base.setindex!(obj::LensedAsObj, x) = _set!(obj, identity, x)
+@inline Base.getindex(obj::LensedAsObj) = getval(obj, identity)
+@inline Base.setindex!(obj::LensedAsObj, x) = setval!(obj, identity, x)
 
-@inline Base.propertynames(obj::LensedAsObj) = _propnames(obj)
-@inline Base.getproperty(obj::LensedAsObj, sym::Symbol) = _get(obj, PropertyLens{sym}())
-@inline Base.setproperty!(obj::LensedAsObj, sym::Symbol, x) = set!(obj, PropertyLens{sym}(), x)
+@inline Base.propertynames(obj::LensedAsObj) = valpropnames(obj)
+@inline Base.getproperty(obj::LensedAsObj, sym::Symbol) = getval(obj, PropertyLens{sym}())
+@inline Base.setproperty!(obj::LensedAsObj, sym::Symbol, x) = setval!(obj, PropertyLens{sym}(), x)
 
 function Base.show(io::IO, obj::LensedAsObj)
     print(io, "lensed: ")
@@ -34,14 +34,14 @@ end
 
 LensedAsArray{T,N}(lens::LT, orig::PT) where {T,N,LT,PT} = LensedAsArray{T,N,LT,PT}(lens, orig)
 
-@inline Base.getindex(obj::LensedAsArray, idx) = _get(obj, IndexLens(idx,))
-@inline Base.getindex(obj::LensedAsArray, idx...) = _get(obj, IndexLens(idxs))
-@inline Base.setindex!(obj::LensedAsArray, x, idx) = _set!(obj, IndexLens(idx,), x)
-@inline Base.setindex!(obj::LensedAsArray, x, idxs...) = _set!(obj, IndexLens(idxs), x)
+@inline Base.getindex(obj::LensedAsArray, idx) = getval(obj, IndexLens(idx,))
+@inline Base.getindex(obj::LensedAsArray, idx...) = getval(obj, IndexLens(idxs))
+@inline Base.setindex!(obj::LensedAsArray, x, idx) = setval!(obj, IndexLens(idx,), x)
+@inline Base.setindex!(obj::LensedAsArray, x, idxs...) = setval!(obj, IndexLens(idxs), x)
 
-@inline Base.size(obj::LensedAsArray) = size(_get(obj, identity))
-@inline Base.length(obj::LensedAsArray) = length(_get(obj, identity))
-@inline Base.IndexStyle(obj::LensedAsArray) = IndexStyle(_get(obj, identity))
+@inline Base.size(obj::LensedAsArray) = size(getval(obj, identity))
+@inline Base.length(obj::LensedAsArray) = length(getval(obj, identity))
+@inline Base.IndexStyle(obj::LensedAsArray) = IndexStyle(getval(obj, identity))
 
 function Base.show(io::IO, obj::LensedAsArray)
     print(io, "lensed: ")
@@ -55,81 +55,26 @@ end
 
 
 
-const _Identity = typeof(identity)
-
 @inline _getlens(obj::Union{LensedAsObj, LensedAsArray}) = getfield(obj, :_lens)
 @inline _getorig(obj::Union{LensedAsObj, LensedAsArray}) = getfield(obj, :_orig)
 
+valpropnames(value::LensedAsObj) = valpropnames(getval(value, identity))
 
-_propnames(value) = propertynames(value)
+getval(value::Union{LensedAsObj, LensedAsArray}, ::_Identity) = getval(_getorig(value), _getlens(value))
+getval(value::Union{LensedAsObj, LensedAsArray}, lens) = getval(getval(value, identity), lens)
 
-_propnames(value::LensedAsObj) = _propnames(_get(value, identity))
+setval!(value::Union{LensedAsObj, LensedAsArray},  ::_Identity, x) = setval!(_getorig(value), _getlens(value), x)
 
-_propnames(value::Observable) = _propnames(_get(value, identity))
-
-
-@inline _get(value, ::_Identity) = value
-@inline _get(value, lens) = lens(value)
-
-_get(value::Union{LensedAsObj, LensedAsArray}, ::_Identity) = _get(_getorig(value), _getlens(value))
-_get(value::Union{LensedAsObj, LensedAsArray}, lens) = _get(_get(value, identity), lens)
-
-@inline _get(value::Observable, ::_Identity) = value[]
-@inline _get(value::Observable, lens) = _get(_get(value, identity), lens)
-
-
-@inline function _set!!(value, lens, x)
-    if ismutable(value)
-        ret = _set!(value, lens, x)
-        return value, ret
-    else
-        new_value = set(value, lens,  x)
-        return new_value, x
-    end
+@inline function setval!!(value::Union{LensedAsObj, LensedAsArray}, lens, x)
+    setval!(value, lens, x)
+    return value
 end
 
-@inline function _set!!(value::Union{LensedAsObj, LensedAsArray}, lens, x)
-    ret = _set!(value, lens, x)
-    return value, ret
-end
-
-@inline function _set!!(value::Observable, lens, x)
-    ret = _set!(value, lens, x)
-    return value, ret
-end
-
-
-# ToDo: Add generic set! with identity lens for mutable objects?
-_set!(value::Union{LensedAsObj, LensedAsArray},  ::_Identity, x) = _set!(_getorig(value), _getlens(value), x)
-_set!(value::Observable, ::_Identity, x) = value[] = x
-
-
-@inline _set!(value, lens, x) = _set_generic!(value, lens, x)
-@inline _set_generic!(value, ::PropertyLens{sym}, x) where sym = setproperty!(value, sym, x)
-@inline _set_generic!(value, lens::IndexLens, x) = setindex!(value, x, lens.indices...)
-
-function _set!(value::Union{LensedAsObj, LensedAsArray}, lens, x)
-    new_value, ret = set!!(_get(value, identity), lens, x)
-    set!(value, identity, new_value)
+function setval!(value::Union{LensedAsObj, LensedAsArray}, lens, x)
+    new_value, ret = Accessors.set!!(getval(value, identity), lens, x)
+    setval!(value, identity, new_value)
     return ret
 end
-
-function _set!(value::Observable, lens, x)
-    new_value, ret = set!!(_get(value, identity), lens, x)
-    set!(value, identity, new_value)
-    return ret
-end
-
-
-
-@inline function _getlensed(lens, obj::PT) where PT
-    VT = Core.Compiler.return_type(lens, Tuple{PT})
-    return _getlensed_impl(lens, obj, VT)
-end
-
-_getlensed_impl(lens, obj, ::Type{<:Any}) = LensedAsObj(lens, obj)
-
-_getlensed_impl(lens, obj, ::Type{<:AbstractArray{T,N}}) where {T,N} = LensedAsArray{T,N}(lens, obj)
 
 
 
@@ -160,3 +105,12 @@ This allows for change notification to nested structures of structs,
 arrays and `Observable` objects.
 """
 @inline changeable(obj) = _getlensed(identity, obj)
+
+@inline function _getlensed(lens, obj::PT) where PT
+    VT = Core.Compiler.return_type(lens, Tuple{PT})
+    return _getlensed_impl(lens, obj, VT)
+end
+
+_getlensed_impl(lens, obj, ::Type{<:Any}) = LensedAsObj(lens, obj)
+
+_getlensed_impl(lens, obj, ::Type{<:AbstractArray{T,N}}) where {T,N} = LensedAsArray{T,N}(lens, obj)
