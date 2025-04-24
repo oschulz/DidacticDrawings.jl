@@ -11,7 +11,7 @@ end
 @inline Base.getindex(obj::LensedAsObj) = getval(obj, identity)
 @inline Base.setindex!(obj::LensedAsObj, x) = setval!(obj, identity, x)
 
-@inline Base.propertynames(obj::LensedAsObj) = valpropnames(obj)
+@inline Base.propertynames(obj::LensedAsObj) = propertynames(getval(obj))
 @inline Base.getproperty(obj::LensedAsObj, sym::Symbol) = getval(obj, PropertyLens{sym}())
 @inline Base.setproperty!(obj::LensedAsObj, sym::Symbol, x) = setval!(obj, PropertyLens{sym}(), x)
 
@@ -58,22 +58,20 @@ end
 @inline _getlens(obj::Union{LensedAsObj, LensedAsArray}) = getfield(obj, :_lens)
 @inline _getorig(obj::Union{LensedAsObj, LensedAsArray}) = getfield(obj, :_orig)
 
-valpropnames(value::LensedAsObj) = valpropnames(getval(value, identity))
+getval(::typeof(identity), obj::Union{LensedAsObj, LensedAsArray}) = getval(_getlens(obj), _getorig(obj))
+getval(lens, obj::Union{LensedAsObj, LensedAsArray}) = getval(lens, getval(obj))
 
-getval(value::Union{LensedAsObj, LensedAsArray}, ::_Identity) = getval(_getorig(value), _getlens(value))
-getval(value::Union{LensedAsObj, LensedAsArray}, lens) = getval(getval(value, identity), lens)
-
-setval!(value::Union{LensedAsObj, LensedAsArray},  ::_Identity, x) = setval!(_getorig(value), _getlens(value), x)
-
-@inline function setval!!(value::Union{LensedAsObj, LensedAsArray}, lens, x)
-    setval!(value, lens, x)
-    return value
+@inline function setval!!(lens, obj::Union{LensedAsObj, LensedAsArray}, x)
+    setval!(obj, lens, x)
+    return obj
 end
 
-function setval!(value::Union{LensedAsObj, LensedAsArray}, lens, x)
-    new_value, ret = Accessors.set!!(getval(value, identity), lens, x)
-    setval!(value, identity, new_value)
-    return ret
+setval!(::typof(identity), obj::Union{LensedAsObj, LensedAsArray}, x) = setval!(_getlens(obj), _getorig(obj), x)
+
+function setval!(lens, obj::Union{LensedAsObj, LensedAsArray}, x)
+    new_value = setval!!(lens, getval(obj), x)
+    setval!(obj, new_value)
+    return x
 end
 
 

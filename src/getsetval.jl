@@ -1,26 +1,6 @@
 # This file is a part of DidacticDrawings.jl, licensed under the MIT License (MIT).
 
 
-const _Identity = typeof(identity)
-
-
-"""
-    valpropnames(obj)
-
-Get the property names of the value of `obj`.
-
-Will return `propertynames(obj)` itself for "direct" objects, and the
-property names for the inner value of "reference-like" objects.
-
-See [`getval`](@ref).
-"""
-function valpropnames end
-export valpropnames
-
-valpropnames(value) = propertynames(value)
-
-
-
 """
     getval(lens, obj)
     getval(obj) == getval(identity, obj)
@@ -95,23 +75,32 @@ export setval!
 
 
 @inline setval!(lens, value, x) = _set_generic!(lens, value, x)
-# ToDo: Add generic set! with identity lens for mutable objects?
+# ToDo: Add _set_generic! with identity lens for mutable objects in general?
 #@inline _set_generic!(::typeof(identity), value, x) = ...
 @inline _set_generic!(::PropertyLens{sym}, value, x) where sym = setproperty!(value, sym, x)
 @inline _set_generic!(lens::IndexLens, value, x) = setindex!(value, x, lens.indices...)
 
 
-valpropnames(obj::Observable) = valpropnames(getval(obj))
-@inline getval(obj::Observable, ::_Identity) = obj[]
-@inline getval(obj::Observable, lens) = getval(getval(obj), lens)
 
-@inline function setval!!(obj::Observable, lens, x)
-    setval!(obj, lens, x)
+@inline getval(lens, obj::Observable) = getval(lens, obj[])
+
+@inline function setval!!(lens, obj::Observable, x)
+    setval!(lens, obj, x)
     return obj
 end
 
-function setval!(obj::Observable, lens, x)
-    new_value, ret = set!!(getval(obj), lens, x)
-    set!(obj, new_value)
-    return ret
+function setval!(lens, obj::Observable, x)
+    new_value = setval!!(lens, getval(obj), x)
+    obj[] = new_value
+    return x
+end
+
+
+const _SymObject = Union{Symbolics.Num, Symbolics.Arr}
+
+#!!!!!!!!
+function getval(lens, obj::_SymObject)
+    vars = Symbolics.get_variables(obj)
+    #substitute(h, Dict(v => Symbolics.getdefaultval(v) for v in  Symbolics.get_variables(h)))
+    # collect
 end
