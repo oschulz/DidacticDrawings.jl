@@ -59,22 +59,40 @@ end
 
 const _LensedLike = Union{LensedAsObj, LensedAsArray}
 
+_similar_lensed(@nospecialize(obj::LensedAsObj), new_lens, new_orig) = LensedAsObj(new_lens, new_orig)
+_similar_lensed(@nospecialize(obj::LensedAsArray), new_lens, new_orig) = LensedAsObj(new_lens, new_orig)
+
 @inline _getlens(obj::_LensedLike) = getfield(obj, :_lens)
 @inline _getorig(obj::_LensedLike) = getfield(obj, :_orig)
 
 getval(::typeof(identity), obj::_LensedLike) = getval(_getlens(obj), _getorig(obj))
 getval(lens, obj::_LensedLike) = getval(lens, getval(obj))
 
-@inline function setval!!(lens, obj::_LensedLike, x)
-    setval!(obj, lens, x)
-    return obj
+
+@inline function setval!!(::typeof(identity), obj::_LensedLike, x)
+    orig_lens = _getlens(obj)
+    old_orig = _getorig(obj)
+    new_orig = setval!!(_getlens(obj), _getorig(obj), x)
+    if typeof(old_orig) == typeof(new_orig) && old_orig === new_orig
+        return obj
+    else
+        return _similar_lensed(obj, orig_lens, new_orig)
+    end
 end
+
+@inline function setval!!(lens, obj::_LensedLike, x)
+    old_value = getval(lens, obj)
+    new_value = setval!!(lens, old_value, x)
+    return setval!!(identity, obj, new_value)
+end
+
 
 setval!(::typeof(identity), obj::_LensedLike, x) = setval!(_getlens(obj), _getorig(obj), x)
 
 function setval!(lens, obj::_LensedLike, x)
-    new_value = setval!!(lens, getval(obj), x)
-    setval!(obj, new_value)
+    old_value = getval(lens, obj)
+    new_value = setval!!(lens, old_value, x)
+    setval!(identity, obj, new_value)
     return x
 end
 

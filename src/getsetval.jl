@@ -40,6 +40,8 @@ Do not specialize `setval!!(obj::SomeType, x)`, specialize
 function setval!! end
 export setval!!
 
+@inline setval!!(obj, x) = setval!!(identity, obj, x)
+
 @inline function setval!!(lens, obj, x)
     if ismutable(obj)
         setval!(lens, obj, x)
@@ -71,6 +73,8 @@ Do not specialize `setval!(obj::SomeType, x)`, specialize
 function setval! end
 export setval!
 
+@inline setval!(obj, x) = setval!(identity, obj, x)
+
 
 
 @inline setval!(lens, value, x) = _set_generic!(lens, value, x)
@@ -88,7 +92,7 @@ export setval!
 end
 
 function _reflike_setval!(lens, obj, x)
-    new_value = setval!!(lens, getval(obj), x)
+    new_value = setval!!(lens, obj[], x)
     obj[] = new_value
     return x
 end
