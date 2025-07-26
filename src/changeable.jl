@@ -1,26 +1,24 @@
 # This file is a part of DidacticDrawings.jl, licensed under the MIT License (MIT).
 
-
-
 struct LensedAsObj{LT,PT}
     _lens::LT
     _orig::PT
 end
 
 
-@inline Base.getindex(obj::LensedAsObj) = getval(obj, identity)
-@inline Base.setindex!(obj::LensedAsObj, x) = setval!(obj, identity, x)
+@inline Base.getindex(obj::LensedAsObj) = getval(identity, obj)
+@inline Base.setindex!(obj::LensedAsObj, x) = setval!(identity, obj, x)
 
 @inline Base.propertynames(obj::LensedAsObj) = propertynames(getval(obj))
-@inline Base.getproperty(obj::LensedAsObj, sym::Symbol) = getval(obj, PropertyLens{sym}())
-@inline Base.setproperty!(obj::LensedAsObj, sym::Symbol, x) = setval!(obj, PropertyLens{sym}(), x)
+@inline Base.getproperty(obj::LensedAsObj, sym::Symbol) = getval(PropertyLens{sym}(), obj)
+@inline Base.setproperty!(obj::LensedAsObj, sym::Symbol, x) = setval!(PropertyLens{sym}(), obj, x)
 
 function Base.show(io::IO, obj::LensedAsObj)
     print(io, "lensed: ")
     show(io, obj[])
 end
 
-function Base.show(io::IO, ::MIME"text/plain", obj::LensedAsObj)
+function Base.show(io::IO, mime::MIME"text/plain", obj::LensedAsObj)
     print(io, "lensed: ")
     show(io, mime, obj[])
 end
@@ -34,24 +32,24 @@ end
 
 LensedAsArray{T,N}(lens::LT, orig::PT) where {T,N,LT,PT} = LensedAsArray{T,N,LT,PT}(lens, orig)
 
-@inline Base.getindex(obj::LensedAsArray, idx::Integer) = getval(obj, IndexLens((idx,)))
-@inline Base.getindex(obj::LensedAsArray, idx::AbstractArray{<:Integer}) = getval(obj, IndexLens((idx,)))
-@inline Base.getindex(obj::LensedAsArray, idxs::Tuple{Vararg{Any,N}}) where N = getval(obj, IndexLens(idxs))
+@inline Base.getindex(obj::LensedAsArray, idx::Integer) = getval(IndexLens((idx,)), obj)
+@inline Base.getindex(obj::LensedAsArray, idx::AbstractArray{<:Integer}) = getval(IndexLens((idx,)), obj)
+@inline Base.getindex(obj::LensedAsArray, idxs::Tuple{Vararg{Any,N}}) where N = getval(IndexLens(idxs), obj)
 
-@inline Base.setindex!(obj::LensedAsArray, x, idx::Integer) = setval!(obj, IndexLens((idx,)), x)
-@inline Base.setindex!(obj::LensedAsArray, x, idx::AbstractArray{<:Integer}) = setval!(obj, IndexLens((idx,)), x)
-@inline Base.setindex!(obj::LensedAsArray, x, idxs::Tuple{Vararg{Any,N}}) where N = setval!(obj, IndexLens(idxs), x)
+@inline Base.setindex!(obj::LensedAsArray, x, idx::Integer) = setval!(IndexLens((idx,)), obj, x)
+@inline Base.setindex!(obj::LensedAsArray, x, idx::AbstractArray{<:Integer}) = setval!(IndexLens((idx,)), obj, x)
+@inline Base.setindex!(obj::LensedAsArray, x, idxs::Tuple{Vararg{Any,N}}) where N = setval!(IndexLens(idxs), obj, x)
 
-@inline Base.size(obj::LensedAsArray) = size(getval(obj, identity))
-@inline Base.length(obj::LensedAsArray) = length(getval(obj, identity))
-@inline Base.IndexStyle(obj::LensedAsArray) = IndexStyle(getval(obj, identity))
+@inline Base.size(obj::LensedAsArray) = size(getval(identity, obj))
+@inline Base.length(obj::LensedAsArray) = length(getval(identity, obj))
+@inline Base.IndexStyle(obj::LensedAsArray) = IndexStyle(getval(identity, obj))
 
 function Base.show(io::IO, obj::LensedAsArray)
     print(io, "lensed: ")
     show(io, obj[])
 end
 
-function Base.show(io::IO, ::MIME"text/plain", obj::LensedAsArray)
+function Base.show(io::IO, mime::MIME"text/plain", obj::LensedAsArray)
     print(io, "lensed: ")
     show(io, mime, obj[])
 end
@@ -90,9 +88,9 @@ end
 setval!(::typeof(identity), obj::_LensedLike, x) = setval!(_getlens(obj), _getorig(obj), x)
 
 function setval!(lens, obj::_LensedLike, x)
-    old_value = getval(lens, obj)
+    old_value = getval(obj)
     new_value = setval!!(lens, old_value, x)
-    setval!(identity, obj, new_value)
+    setval!(obj, new_value)
     return x
 end
 
